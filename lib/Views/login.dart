@@ -1,5 +1,8 @@
+// lib/Views/login.dart
 import 'package:flutter/material.dart';
-import 'register.dart'; // Asegúrate de que este archivo exista y contenga la clase Register
+import '../services/ApiService.dart';
+import 'home.dart';
+import 'register.dart';
 
 class login extends StatefulWidget {
   @override
@@ -8,15 +11,26 @@ class login extends StatefulWidget {
 
 class _LoginState extends State<login> {
   final _formKey = GlobalKey<FormState>();
-  String _email = '';
+  String _username = '';
   String _password = '';
   bool _obscureText = true;
 
-  void _submit() {
+  Future<void> _submit() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-      // Aquí iría la lógica de autenticación
-      print('Email: $_email, Password: $_password');
+      final response = await ApiService().signIn({'username': _username, 'password': _password});
+
+      if (response.statusCode == 200) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => Home(username: _username),
+          ),
+        );
+      } else {
+        // Handle login error
+        print('Login failed: ${response.body}');
+      }
     }
   }
 
@@ -63,36 +77,19 @@ class _LoginState extends State<login> {
                       ),
                       SizedBox(height: 40),
                       TextFormField(
-                        decoration: InputDecoration(
-                          labelText: 'Email',
-                          prefixIcon: Icon(Icons.email, color: Colors.black87),
-                          labelStyle: TextStyle(color: Colors.black87),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.black54),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.black87),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          filled: true,
-                          fillColor: Colors.white.withOpacity(0.9),
-                        ),
+                        decoration: _inputDecoration('Username', Icons.person),
                         style: TextStyle(color: Colors.black87),
-                        keyboardType: TextInputType.emailAddress,
                         validator: (value) {
-                          if (value == null || value.isEmpty || !value.contains('@')) {
-                            return 'Por favor, ingresa un email válido';
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your username';
                           }
                           return null;
                         },
-                        onSaved: (value) => _email = value!,
+                        onSaved: (value) => _username = value!,
                       ),
                       SizedBox(height: 20),
                       TextFormField(
-                        decoration: InputDecoration(
-                          labelText: 'Contraseña',
-                          prefixIcon: Icon(Icons.lock, color: Colors.black87),
+                        decoration: _inputDecoration('Password', Icons.lock).copyWith(
                           suffixIcon: IconButton(
                             icon: Icon(
                               _obscureText ? Icons.visibility : Icons.visibility_off,
@@ -100,23 +97,12 @@ class _LoginState extends State<login> {
                             ),
                             onPressed: _togglePasswordVisibility,
                           ),
-                          labelStyle: TextStyle(color: Colors.black87),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.black54),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.black87),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          filled: true,
-                          fillColor: Colors.white.withOpacity(0.9),
                         ),
                         style: TextStyle(color: Colors.black87),
                         obscureText: _obscureText,
                         validator: (value) {
                           if (value == null || value.isEmpty || value.length < 6) {
-                            return 'La contraseña debe tener al menos 6 caracteres';
+                            return 'Password must be at least 6 characters';
                           }
                           return null;
                         },
@@ -125,7 +111,7 @@ class _LoginState extends State<login> {
                       SizedBox(height: 30),
                       ElevatedButton(
                         onPressed: _submit,
-                        child: Text('Iniciar Sesión', style: TextStyle(fontSize: 18)),
+                        child: Text('Log In', style: TextStyle(fontSize: 18)),
                         style: ElevatedButton.styleFrom(
                           foregroundColor: Colors.white,
                           backgroundColor: Colors.black87,
@@ -143,7 +129,7 @@ class _LoginState extends State<login> {
                             MaterialPageRoute(builder: (context) => Register()),
                           );
                         },
-                        child: Text('¿No tienes cuenta? Regístrate', style: TextStyle(fontSize: 16, color: Colors.black87)),
+                        child: Text('Don\'t have an account? Register', style: TextStyle(fontSize: 16, color: Colors.black87)),
                         style: OutlinedButton.styleFrom(
                           side: BorderSide(color: Colors.black87),
                           padding: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
@@ -159,6 +145,22 @@ class _LoginState extends State<login> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon, color: Colors.black87),
+      labelStyle: TextStyle(color: Colors.black87),
+      enabledBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: Colors.black87),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: Colors.black),
+        borderRadius: BorderRadius.circular(10),
       ),
     );
   }
