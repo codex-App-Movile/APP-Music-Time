@@ -1,4 +1,3 @@
-// lib/Views/register.dart
 import 'package:flutter/material.dart';
 import '../services/ApiService.dart';
 import 'login.dart';
