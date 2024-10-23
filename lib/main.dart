@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
-
+import 'package:provider/provider.dart';
+import 'providers/AuthenticationProvider.dart';
+import 'Views/Home.dart';
 import 'Views/login.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => AuthenticationProvider(),
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -19,7 +25,10 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: login(),
+      routes: {
+        '/sign-in': (context) => login(),
+        '/home': (context) => Home(username: 'YourUsername'),
+      },
     );
   }
 }
-

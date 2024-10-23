@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import '../services/ApiService.dart';
+import '../services/Customer/serviceCustomer.dart';
 
 class Profile extends StatefulWidget {
-  final String username;
+  final String customerId;
 
-  Profile({required this.username});
+  Profile({required this.customerId, required String username});
 
   @override
   _ProfileState createState() => _ProfileState();
@@ -31,10 +31,46 @@ class _ProfileState extends State<Profile> {
     _fetchProfile();
   }
 
+  Future<void> _submit() async {
+    if (_formKey.currentState!.validate()) {
+      final profileData = {
+        'firstName': _firstNameController.text,
+        'lastName': _lastNameController.text,
+        'email': _emailController.text,
+        'street': _streetController.text,
+        'number': _numberController.text,
+        'city': _cityController.text,
+        'postalCode': _postalCodeController.text,
+        'country': _countryController.text,
+      };
+
+      print('Submitting profile data: $profileData'); // Debugging line
+
+      http.Response response;
+      if (_isProfileExisting) {
+        response = await ServiceCustomer().updateCustomer(widget.customerId, profileData);
+      } else {
+        response = await ServiceCustomer().createCustomer(profileData);
+      }
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // Handle successful profile update or creation
+        print('Profile saved successfully');
+        setState(() {
+          _isEditing = false; // Disable editing after saving
+        });
+      } else {
+        // Handle profile update or creation error
+        print('Profile save failed: ${response.body}');
+      }
+    }
+  }
+
   Future<void> _fetchProfile() async {
-    final response = await ApiService().getProfile(widget.username);
+    final response = await ServiceCustomer().getCustomerById(widget.customerId);
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
+      print('Fetched profile data: $data'); // Debugging line
       setState(() {
         _firstNameController.text = data['firstName'];
         _lastNameController.text = data['lastName'];
@@ -58,44 +94,21 @@ class _ProfileState extends State<Profile> {
     }
   }
 
-  Future<void> _submit() async {
-    if (_formKey.currentState!.validate()) {
-      final profileData = {
-        'firstName': _firstNameController.text,
-        'lastName': _lastNameController.text,
-        'email': _emailController.text,
-        'street': _streetController.text,
-        'number': _numberController.text,
-        'city': _cityController.text,
-        'postalCode': _postalCodeController.text,
-        'country': _countryController.text,
-      };
-
-      http.Response response;
-      if (_isProfileExisting) {
-        response = await ApiService().updateCustomer(widget.username, profileData);
-      } else {
-        response = await ApiService().createCustomer(profileData);
-      }
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        // Handle successful profile update or creation
-        print('Profile saved successfully');
-        setState(() {
-          _isEditing = false; // Disable editing after saving
-        });
-      } else {
-        // Handle profile update or creation error
-        print('Profile save failed: ${response.body}');
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Complete Your Profile'),
+        actions: [
+          IconButton(
+            icon: Icon(_isEditing ? Icons.check : Icons.edit),
+            onPressed: () {
+              setState(() {
+                _isEditing = !_isEditing;
+              });
+            },
+          ),
+        ],
       ),
       body: Padding(
         padding: EdgeInsets.all(16.0),
